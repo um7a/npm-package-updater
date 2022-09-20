@@ -1,4 +1,4 @@
-name: Daily Build
+.github/workflows/daily_build.ymlname: Daily Build
 
 on:
   schedule:
@@ -32,12 +32,22 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
 
-      - name: Install npm packages
-        run: npm ci
+      - name: Configure git
+        run: git config --global user.name "github actions"
 
       - name: Update npm packages
         if: ${{ matrix.node-version == '16.x' }}
-        run: npm update
+        run: |
+          cp package.json package.json.old
+          npm install -g npm-package-updater
+          npm-package-updater --caret --git --commit-prefix "deps: " --debug
+          if [[ ! -z $(diff package.json package.json.old) ]]; then
+            git add package-lock.json
+            git commit -m "deps: Update package-lock.json"
+          fi
+
+      - name: Install npm packages
+        run: npm install
 
       - name: Check npm package vulnerabilities
         run: npm audit --production
@@ -53,10 +63,4 @@ jobs:
 
       - name: Push package.json and package-lock.json if needed
         if: ${{ matrix.node-version == '16.x' }}
-        run: |
-          if [[ ! -z $(git diff --shortstat package.json) ]]; then \
-            git config --global user.name "github actions"; \
-            git add package.json package-lock.json; \
-            git commit -m "deps: Update dependencies"; \
-            git push origin ${{ matrix.branch }}
-          fi
+        run: git push origin ${{ matrix.branch }}
