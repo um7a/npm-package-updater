@@ -43,6 +43,7 @@ jobs:
 
       - name: Commit and push package-lock.json if needed
         if: ${{ matrix.node-version == '16.x' }}
+        if: ${{ github.event_name == 'push' }}
         run: |
           if [[ ! -z $(git diff --shortstat package-lock.json) ]]; then
             git add package-lock.json
