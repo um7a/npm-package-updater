@@ -42,8 +42,7 @@ jobs:
         run: git config --global user.name "github actions"
 
       - name: Commit and push package-lock.json if needed
-        if: ${{ matrix.node-version == '16.x' }}
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ matrix.node-version == '16.x' && github.event_name == 'push' }}
         run: |
           if [[ ! -z $(git diff --shortstat package-lock.json) ]]; then
             git add package-lock.json
