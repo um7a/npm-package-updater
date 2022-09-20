@@ -41,13 +41,16 @@ jobs:
           cp package.json package.json.old
           npm install -g npm-package-updater
           npm-package-updater --caret --git --commit-prefix "deps: " --debug
-          if [[ ! -z $(diff package.json package.json.old) ]]; then
-            git add package-lock.json
-            git commit -m "deps: Update package-lock.json"
-          fi
 
       - name: Install npm packages
         run: npm install
+
+      - name: Commit package-lock.json
+        run: |
+          if [[ ! -z $(diff package.json.old package.json) ]]; then
+            git add package-lock.json
+            git commit -m "deps: Update package-lock.json"
+          fi
 
       - name: Check npm package vulnerabilities
         run: npm audit --production
