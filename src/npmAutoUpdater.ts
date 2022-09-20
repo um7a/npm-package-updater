@@ -1,34 +1,10 @@
-/*
- * Builtin Packages
- */
-
-/*
- * External Packages
- */
-
 import semver from "semver";
 
-/*
- * Internal Packages
- */
-
 import { existsSync } from "fs";
-import { Logger } from "./logger";
-import { NpmCommandWrapper } from "./npmCommandWrapper";
-import { GitCommandWrapper } from "./gitCommandWrapper";
-import { PackageJsonAccessor } from "./packageJsonAccessor";
-
-/*
- * Variables
- */
-
-/*
- * Functions
- */
-
-/*
- * Classes
- */
+import Logger from "./logger";
+import NpmCommandWrapper from "./npmCommandWrapper";
+import GitCommandWrapper from "./gitCommandWrapper";
+import PackageJsonAccessor from "./packageJsonAccessor";
 
 type PkgInfo = {
   current: string;
@@ -51,14 +27,20 @@ export type NpmPackageUpdaterParam = {
 
 export class NpmPackageUpdater {
   private dryrun: boolean;
+
   private logger: Logger;
+
   private setCaret: boolean;
+
   private setTilde: boolean;
+
   private useGit: boolean;
+
   private commitPrefix: string;
+
   private packageJsonAccessor: PackageJsonAccessor;
 
-  private ensurePackageJsonExists() {
+  private static ensurePackageJsonExists() {
     if (!existsSync("./package.json")) {
       throw new Error("package.json was not found.");
     }
@@ -70,14 +52,7 @@ export class NpmPackageUpdater {
     if (dependenciesName === "dependencies") {
       return this.packageJsonAccessor.getDependencies();
     }
-    if (dependenciesName === "devDependencies") {
-      return this.packageJsonAccessor.getDevDependencies();
-    }
-  }
-
-  private getDevDependencies() {
-    const devDependencies = this.packageJsonAccessor.getDevDependencies();
-    return devDependencies;
+    return this.packageJsonAccessor.getDevDependencies();
   }
 
   private createPackages(
@@ -86,7 +61,7 @@ export class NpmPackageUpdater {
   ) {
     const depPkgInfoList: Map<string, PkgInfo> = new Map();
 
-    for (const [pkgName, currentVersion] of Object.entries(dependencies)) {
+    Object.entries(dependencies).forEach(([pkgName, currentVersion]) => {
       if (typeof currentVersion === "undefined") {
         throw new Error(`Failed to get current version of ${pkgName}.`);
       }
@@ -102,41 +77,42 @@ export class NpmPackageUpdater {
       if (typeof npmInfo.peerDependencies !== "undefined") {
         this.logger.debug(`${pkgName} has peerDependencies.`);
         const pkgNames = Object.keys(dependencies);
-        for (const [peerDepPkgName, acceptableVersion] of Object.entries(
-          npmInfo.peerDependencies
-        )) {
-          this.logger.debug(
-            `Check that ${peerDepPkgName} (peerDependency of ${pkgName}) is also in ${dependenciesName}.`
-          );
-          const peerDepIsOtherDep = pkgNames.some(
-            (otherDepPkgName) => otherDepPkgName === peerDepPkgName
-          );
-          if (peerDepIsOtherDep) {
+        Object.entries(npmInfo.peerDependencies).forEach(
+          ([peerDepPkgName, acceptableVersion]) => {
             this.logger.debug(
-              `${peerDepPkgName} is also in ${dependenciesName}.`
+              `Check that ${peerDepPkgName} (peerDependency of ${pkgName}) is also in ${dependenciesName}.`
             );
-            dependsOn.set(peerDepPkgName, acceptableVersion);
-          } else {
-            this.logger.debug(
-              `${peerDepPkgName} is not in ${dependenciesName}.`
+            const peerDepIsOtherDep = pkgNames.some(
+              (otherDepPkgName) => otherDepPkgName === peerDepPkgName
             );
+            if (peerDepIsOtherDep) {
+              this.logger.debug(
+                `${peerDepPkgName} is also in ${dependenciesName}.`
+              );
+              dependsOn.set(peerDepPkgName, acceptableVersion);
+            } else {
+              this.logger.debug(
+                `${peerDepPkgName} is not in ${dependenciesName}.`
+              );
+            }
           }
-        }
+        );
       }
 
       depPkgInfoList.set(pkgName, {
         current: currentVersion,
         latest: npmInfo.version,
         available: npmInfo.versions,
-        dependsOn: dependsOn,
+        dependsOn,
         isDependedBy: new Map(), // This field will be filled by the following logic.
       });
-    }
+    });
 
     // Fill isDependedBy field.
-    for (const [pkgName, pkgInfo] of depPkgInfoList.entries()) {
-      const dependsOn = pkgInfo.dependsOn;
-      for (const [dependsPkgName, requiredVersion] of dependsOn.entries()) {
+    depPkgInfoList.forEach((pkgInfo, pkgName) => {
+      const { dependsOn } = pkgInfo;
+      // for (const [dependsPkgName, requiredVersion] of dependsOn.entries()) {
+      dependsOn.forEach((requiredVersion, dependsPkgName) => {
         const peerDepPkgInfo = depPkgInfoList.get(dependsPkgName);
         if (typeof peerDepPkgInfo === "undefined") {
           throw new Error(
@@ -144,8 +120,8 @@ export class NpmPackageUpdater {
           );
         }
         peerDepPkgInfo.isDependedBy.set(pkgName, requiredVersion);
-      }
-    }
+      });
+    });
     return depPkgInfoList;
   }
 
@@ -193,19 +169,20 @@ export class NpmPackageUpdater {
     pkgGroup.set(rootPkgName, rootPkgInfo);
 
     // Go to next tree node
-    for (const nextPkgName of rootPkgInfo.isDependedBy.keys()) {
+    rootPkgInfo.isDependedBy.forEach((_, nextPkgName) => {
       this.addPkgToPkgGroup(depPkgs, nextPkgName, pkgGroup);
-    }
+    });
   }
 
   private createPkgGroups(
     depPkgs: Map<string, PkgInfo>,
     allPkgGroups: Map<string, PkgInfo>[]
   ) {
-    for (const [pkgName, pkgInfo] of depPkgs) {
+    // for (const [pkgName, pkgInfo] of depPkgs) {
+    depPkgs.forEach((pkgInfo, pkgName) => {
       // Find root package (the package which does not depend on other package) from depPkgs.
       if (pkgInfo.dependsOn.size > 0) {
-        continue;
+        return;
       }
       this.logger.debug(
         `Create the package group whose root node is ${pkgName}.`
@@ -219,7 +196,7 @@ export class NpmPackageUpdater {
       );
       this.logger.debug("package group is the following.");
       this.logger.debug(pkgGroup);
-    }
+    });
   }
 
   private updatePkgGroup(
@@ -294,6 +271,7 @@ export class NpmPackageUpdater {
     const npmInfo = NpmCommandWrapper.info(pkgNameWithVersion);
 
     // Check acceptable version range of the dependency packages.
+    // eslint-disable-next-line no-restricted-syntax
     for (const depPkgName of pkg.dependsOn.keys()) {
       this.logger.debug(`${pkgNameWithVersion} depends on ${depPkgName}.`);
       const acceptableVersionOfDep = npmInfo.peerDependencies[depPkgName];
@@ -325,7 +303,7 @@ export class NpmPackageUpdater {
         //      PkgB (pkg)                 PkgB (pkg)
         //
         this.logger.debug(
-          `${depPkgName} does not exist in current dependency tree. It is checked in deferent tree.`
+          `${depPkgName} does not exist in current package group. It is checked in deferent package group.`
         );
         continue;
       }
@@ -409,26 +387,28 @@ export class NpmPackageUpdater {
         `The candidate version for ${pkgName} which had already been selected was changed. Recheck other package groups which contains this package if exist.`
       );
       // Find package group which contains depPkg.
-      for (const otherPkgGroup of allPkgGroups) {
+      allPkgGroups.forEach((otherPkgGroup) => {
+        // eslint-disable-next-line no-restricted-syntax
         for (const otherPkgGroupPkgName of otherPkgGroup.keys()) {
           if (otherPkgGroupPkgName === pkgName) {
             // Check that otherPkgGroup is current pkgGroup or not.
-            const isSameTree = (
+            const isSamePkgGroup = (
               pkgGroup1: Map<string, PkgInfo>,
               pkgGroup2: Map<string, PkgInfo>
             ) => {
               if (pkgGroup1.size !== pkgGroup2.size) {
                 return false;
               }
-              for (const pkgName of pkgGroup1.keys()) {
-                if (pkgGroup2.has(pkgName) === false) {
+              // eslint-disable-next-line no-restricted-syntax
+              for (const pkgNameOfPkgGroup1 of pkgGroup1.keys()) {
+                if (pkgGroup2.has(pkgNameOfPkgGroup1) === false) {
                   return false;
                 }
               }
               return true;
             };
 
-            if (isSameTree(pkgGroup, otherPkgGroup)) {
+            if (isSamePkgGroup(pkgGroup, otherPkgGroup)) {
               break;
             }
 
@@ -441,23 +421,25 @@ export class NpmPackageUpdater {
             break;
           }
         }
-      }
+      });
       this.logger.debug("Rechecked other package groups successfully.");
     }
 
-    // Go to next tree node
     this.logger.debug(`Selected candidate version of ${pkgName} successfully.`);
-    for (const nextPkgName of pkg.isDependedBy.keys()) {
+
+    // Go to next package.
+    pkg.isDependedBy.forEach((_, nextPkgName) => {
       this.logger.debug(
         `Select the candidate version of next package ${nextPkgName}. this depends on ${pkgName}.`
       );
       this.updatePkgGroup(allPkgGroups, pkgGroup, nextPkgName);
-    }
+    });
   }
 
   private updatePkgGroups(allPkgGroups: Map<string, PkgInfo>[]) {
-    for (const pkgGroup of allPkgGroups) {
+    allPkgGroups.forEach((pkgGroup) => {
       // Find root node.
+      // eslint-disable-next-line no-restricted-syntax
       for (const [pkgName, pkgInfo] of pkgGroup.entries()) {
         if (pkgInfo.dependsOn.size === 0) {
           this.logger.debug(
@@ -472,7 +454,7 @@ export class NpmPackageUpdater {
           break;
         }
       }
-    }
+    });
   }
 
   private logUpdatePlan(
@@ -480,11 +462,11 @@ export class NpmPackageUpdater {
     updatePkgs: Map<string, PkgInfo>
   ) {
     this.logger.info(`Update ${dependenciesName} to the following version.`);
-    for (const [pkgName, pkgInfo] of updatePkgs.entries()) {
+    updatePkgs.forEach((pkgInfo, pkgName) => {
       this.logger.info(
         `* ${pkgName}: ${pkgInfo.current} -> ${pkgInfo.updateVersion}`
       );
-    }
+    });
   }
 
   private applyUpdate(
@@ -524,16 +506,18 @@ export class NpmPackageUpdater {
       `Update ${pkgName} from ${pkgInfo.current} to ${pkgInfo.updateVersion}.`
     );
     this.packageJsonAccessor.setVersion(pkgName, pkgInfo.updateVersion);
-    this.logger.debug(`Updated successfully`);
+    this.logger.debug("Updated successfully");
 
     const isDependencyUpdate = typeof updatedPkgs !== "undefined";
     if (typeof updatedPkgs === "undefined") {
+      // eslint-disable-next-line no-param-reassign
       updatedPkgs = new Map<string, PkgInfo>();
     }
     updatedPkgs.set(pkgName, pkgInfo);
 
     if (pkgInfo.dependsOn.size > 0) {
       this.logger.debug(`Update the packages which ${pkgName} depends on.`);
+      // eslint-disable-next-line no-restricted-syntax
       for (const depPkgName of pkgInfo.dependsOn.keys()) {
         const depPkgInfo = allUpdatePkgs.get(depPkgName);
         if (typeof depPkgInfo === "undefined") {
@@ -557,6 +541,7 @@ export class NpmPackageUpdater {
 
     if (pkgInfo.isDependedBy.size > 0) {
       this.logger.debug(`Update the packages which depends on ${pkgName}.`);
+      // eslint-disable-next-line no-restricted-syntax
       for (const depPkgName of pkgInfo.isDependedBy.keys()) {
         const depPkgInfo = allUpdatePkgs.get(depPkgName);
         if (typeof depPkgInfo === "undefined") {
@@ -586,13 +571,13 @@ export class NpmPackageUpdater {
       return;
     }
 
-    this.logger.debug(`Commit update.`);
+    this.logger.debug("Commit update.");
     const commitMsgs: string[] = [];
-    for (const [pkgName, pkgInfo] of updatedPkgs.entries()) {
+    updatedPkgs.forEach((updatedPkgInfo, updatedPkgName) => {
       commitMsgs.push(
-        `${pkgName} from ${pkgInfo.current} to ${pkgInfo.updateVersion}`
+        `${updatedPkgName} from ${updatedPkgInfo.current} to ${updatedPkgInfo.updateVersion}`
       );
-    }
+    });
     let commitMsg = this.commitPrefix
       ? `${this.commitPrefix}Update `
       : "Update ";
@@ -610,10 +595,10 @@ export class NpmPackageUpdater {
     dependenciesName: "dependencies" | "devDependencies",
     updatePkgs: Map<string, PkgInfo>
   ) {
-    this.logger.debug(`Update package.json.`);
-    for (const [pkgName, pkgInfo] of updatePkgs.entries()) {
+    this.logger.debug("Update package.json.");
+    updatePkgs.forEach((pkgInfo, pkgName) => {
       this.applyUpdate(dependenciesName, pkgName, pkgInfo, updatePkgs);
-    }
+    });
   }
 
   constructor(param: NpmPackageUpdaterParam) {
@@ -624,16 +609,12 @@ export class NpmPackageUpdater {
     this.useGit = param.useGit;
     this.commitPrefix = param.commitPrefix;
 
-    this.ensurePackageJsonExists();
+    NpmPackageUpdater.ensurePackageJsonExists();
     this.packageJsonAccessor = new PackageJsonAccessor("./package.json");
   }
 
   update(dependenciesName: "dependencies" | "devDependencies") {
     this.logger.debug("Start npm package updater.");
-
-    this.logger.debug("Find package.json.");
-    this.ensurePackageJsonExists();
-    this.logger.debug("package.json was found.");
 
     this.logger.debug("Get dependencies.");
     const dependencies = this.getDependencies(dependenciesName);
@@ -656,25 +637,28 @@ export class NpmPackageUpdater {
     this.updatePkgGroups(allPkgGroups);
     this.logger.debug("Updated package groups successfully.");
 
-    this.logger.debug(`Handle setCaret and setTilde options.`);
-    for (const pkgInfo of depPkgs.values()) {
+    this.logger.debug("Handle setCaret and setTilde options.");
+    depPkgs.forEach((pkgInfo) => {
       if (this.setTilde) {
+        // eslint-disable-next-line no-param-reassign
         pkgInfo.updateVersion = `~${pkgInfo.updateCandidate}`;
       } else if (this.setCaret) {
+        // eslint-disable-next-line no-param-reassign
         pkgInfo.updateVersion = `^${pkgInfo.updateCandidate}`;
       } else {
+        // eslint-disable-next-line no-param-reassign
         pkgInfo.updateVersion = pkgInfo.updateCandidate;
       }
-    }
-    this.logger.debug(`Handled setCaret and setTilde options successfully.`);
+    });
+    this.logger.debug("Handled setCaret and setTilde options successfully.");
 
-    this.logger.debug(`Check if the packages to be updated exist.`);
+    this.logger.debug("Check if the packages to be updated exist.");
     const updatePkgs = new Map<string, PkgInfo>();
-    for (const [pkgName, pkgInfo] of depPkgs.entries()) {
+    depPkgs.forEach((pkgInfo, pkgName) => {
       if (pkgInfo.current !== pkgInfo.updateVersion) {
         updatePkgs.set(pkgName, pkgInfo);
       }
-    }
+    });
     if (updatePkgs.size === 0) {
       this.logger.info(`${dependenciesName} need no update.`);
       return;
@@ -683,7 +667,7 @@ export class NpmPackageUpdater {
     this.logUpdatePlan(dependenciesName, updatePkgs);
 
     if (this.dryrun) {
-      this.logger.notice(`dryrun mode is set. Skip changing package.json.`);
+      this.logger.notice("dryrun mode is set. Skip changing package.json.");
       return;
     }
     this.applyUpdates(dependenciesName, updatePkgs);

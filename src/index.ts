@@ -1,30 +1,6 @@
-/*
- * Builtin Packages
- */
-
-/*
- * External Packages
- */
-
-/*
- * Internal Packages
- */
-
 import { Arguments, ruleType } from "./arguments";
-import { Logger } from "./logger";
+import Logger from "./logger";
 import { NpmPackageUpdater, NpmPackageUpdaterParam } from "./npmAutoUpdater";
-
-/*
- * Variables
- */
-
-/*
- * Functions
- */
-
-/*
- * Classes
- */
 
 export default function main() {
   const argRules: ruleType[] = [
@@ -76,6 +52,7 @@ export default function main() {
   const args = new Arguments(argRules, process.argv);
   const helpOption = args.getBoolean("help");
   if (helpOption.found && helpOption.values[0] === true) {
+    // eslint-disable-next-line no-console
     console.log(args.generateHelp());
     return;
   }
@@ -116,7 +93,7 @@ export default function main() {
 
   const commitPrefixOption = args.getString("commit-prefix");
   if (commitPrefixOption.found) {
-    npmAutoUpdaterParam.commitPrefix = commitPrefixOption.values[0];
+    [npmAutoUpdaterParam.commitPrefix] = commitPrefixOption.values;
   }
 
   const npmAutoUpdater = new NpmPackageUpdater(npmAutoUpdaterParam);

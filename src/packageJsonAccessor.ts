@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from 'fs';
 
 type PackageJson = {
   dependencies: {
@@ -9,22 +9,24 @@ type PackageJson = {
   };
 };
 
-export class PackageJsonAccessor {
+export default class PackageJsonAccessor {
   private packageJson;
+
   private packageJsonPath: string;
 
-  private isValidDependency(dependencies: any) {
-    if (typeof dependencies === "undefined") {
+  private static isValidDependency(dependencies: any) {
+    if (typeof dependencies === 'undefined') {
       return true;
     }
-    if (typeof dependencies !== "object" || dependencies === null) {
+    if (typeof dependencies !== 'object' || dependencies === null) {
       return false;
     }
+    // eslint-disable-next-line no-restricted-syntax
     for (const [pkgName, pkgVersion] of Object.entries(dependencies)) {
-      if (typeof pkgName !== "string") {
+      if (typeof pkgName !== 'string') {
         return false;
       }
-      if (typeof pkgVersion !== "string") {
+      if (typeof pkgVersion !== 'string') {
         return false;
       }
     }
@@ -34,17 +36,17 @@ export class PackageJsonAccessor {
   constructor(packageJsonPath: string) {
     this.packageJsonPath = packageJsonPath;
     const pkgJson = JSON.parse(readFileSync(packageJsonPath).toString());
-    if (typeof pkgJson !== "object" || pkgJson === null) {
+    if (typeof pkgJson !== 'object' || pkgJson === null) {
       throw new Error(`Invalid package.json: ${pkgJson}`);
     }
     // Validate dependencies
-    const dependencies = pkgJson.dependencies;
-    if (!this.isValidDependency(dependencies)) {
-      throw new Error(`Invalid package.json. dependencies is invalid.`);
+    const { dependencies } = pkgJson;
+    if (!PackageJsonAccessor.isValidDependency(dependencies)) {
+      throw new Error('Invalid package.json. dependencies is invalid.');
     }
-    const devDependencies = pkgJson.devDependencies;
-    if (!this.isValidDependency(devDependencies)) {
-      throw new Error(`Invalid package.json. devDependencies is invalid.`);
+    const { devDependencies } = pkgJson;
+    if (!PackageJsonAccessor.isValidDependency(devDependencies)) {
+      throw new Error('Invalid package.json. devDependencies is invalid.');
     }
     this.packageJson = pkgJson as PackageJson;
   }
@@ -59,8 +61,9 @@ export class PackageJsonAccessor {
 
   getVersion(packageName: string) {
     if (this.packageJson.devDependencies !== undefined) {
+      // eslint-disable-next-line no-restricted-syntax
       for (const [name, version] of Object.entries(
-        this.packageJson.devDependencies
+        this.packageJson.devDependencies,
       )) {
         if (name === packageName) {
           return version;
@@ -68,8 +71,9 @@ export class PackageJsonAccessor {
       }
     }
     if (this.packageJson.dependencies !== undefined) {
+      // eslint-disable-next-line no-restricted-syntax
       for (const [name, version] of Object.entries(
-        this.packageJson.dependencies
+        this.packageJson.dependencies,
       )) {
         if (name === packageName) {
           return version;
@@ -82,6 +86,7 @@ export class PackageJsonAccessor {
   setVersion(packageName: string, version: string) {
     let packageIsFound = false;
     if (this.packageJson.devDependencies !== undefined) {
+      // eslint-disable-next-line no-restricted-syntax
       for (const name of Object.keys(this.packageJson.devDependencies)) {
         if (name === packageName) {
           this.packageJson.devDependencies[name] = version;
@@ -91,6 +96,7 @@ export class PackageJsonAccessor {
       }
     }
     if (this.packageJson.dependencies !== undefined) {
+      // eslint-disable-next-line no-restricted-syntax
       for (const name of Object.keys(this.packageJson.dependencies)) {
         if (name === packageName) {
           this.packageJson.dependencies[name] = version;
@@ -104,7 +110,7 @@ export class PackageJsonAccessor {
     }
     writeFileSync(
       this.packageJsonPath,
-      JSON.stringify(this.packageJson, undefined, 2)
+      JSON.stringify(this.packageJson, undefined, 2),
     );
   }
 }

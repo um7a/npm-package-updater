@@ -6,13 +6,46 @@ const BG_MAGENTA = '\u001b[45m';
 const BG_CYAN = '\u001b[46m';
 const RESET = '\u001b[0m';
 
+const logLevels = {
+  debug: {
+    color: BG_BLUE,
+    index: 5,
+    prefix: ' DEBUG ',
+  },
+  info: {
+    color: BG_GREEN,
+    index: 4,
+    prefix: ' INFO ',
+  },
+  notice: {
+    color: BG_CYAN,
+    index: 3,
+    prefix: ' NOTICE ',
+  },
+  warning: {
+    color: BG_YELLOW,
+    index: 2,
+    prefix: ' WARN ',
+  },
+  error: {
+    color: BG_RED,
+    index: 1,
+    prefix: ' ERROR ',
+  },
+  critical: {
+    color: BG_MAGENTA,
+    index: 0,
+    prefix: ' CRITICAL ',
+  },
+};
+
 type LogLevel = {
   color: string;
   index: number;
   prefix: string;
 };
 
-export class Logger {
+export default class Logger {
   private logLevel: LogLevel;
 
   private addColor: boolean;
@@ -70,36 +103,3 @@ export class Logger {
     this.log(msg, logLevels.critical);
   }
 }
-
-const logLevels = {
-  debug: {
-    color: BG_BLUE,
-    index: 5,
-    prefix: ' DEBUG ',
-  },
-  info: {
-    color: BG_GREEN,
-    index: 4,
-    prefix: ' INFO ',
-  },
-  notice: {
-    color: BG_CYAN,
-    index: 3,
-    prefix: ' NOTICE ',
-  },
-  warning: {
-    color: BG_YELLOW,
-    index: 2,
-    prefix: ' WARN ',
-  },
-  error: {
-    color: BG_RED,
-    index: 1,
-    prefix: ' ERROR ',
-  },
-  critical: {
-    color: BG_MAGENTA,
-    index: 0,
-    prefix: ' CRITICAL ',
-  },
-};
