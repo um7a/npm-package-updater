@@ -66,4 +66,7 @@ jobs:
 
       - name: Push package.json and package-lock.json if needed
         if: ${{ matrix.node-version == '16.x' }}
-        run: git push origin ${{ matrix.branch }}
+        run: |
+          if [[ ! -z $(diff package.json.old package.json) ]]; then
+            git push origin ${{ matrix.branch }}
+          fi
