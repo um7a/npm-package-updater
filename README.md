@@ -7,13 +7,13 @@ This npm package provides a utility to update npm package.
 
 ### Install
 
-```bash
+```
 $ npm install -g npm-package-updater
 ```
 
 ### Usage
 
-```bash
+```
 $ npm-package-updater -h
 
 Usage:
@@ -28,6 +28,6 @@ Usage:
 
 ### Example
 
-```bash
+```
 $ npm-package-updater --caret --git --commit-prefix 'deps: '
 ```
