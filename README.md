@@ -25,3 +25,9 @@ Usage:
   -g, --git           : Execute git commit on package.json change.
   -p, --commit-prefix : Add prefix to git commit message.
 ```
+
+### Example
+
+```bash
+$ npm-package-updater --caret --git --commit-prefix 'deps: '
+```
