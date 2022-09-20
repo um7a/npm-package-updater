@@ -1,0 +1,86 @@
+name: Release
+
+# When tag '*.*.*' is pushed, run this job.
+on:
+  push:
+    tags:
+      - "*.*.*"
+jobs:
+  check-tag-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+
+      - name: Check tag name
+        run: test `echo ${{ github.ref }} | cut -d / -f 3`  = `node -e "console.log(require('./package.json').version)"`
+
+  git-release:
+    needs: check-tag-version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+
+      - name: Use jq
+        run: sudo apt -y install jq
+
+      - name: Create Release
+        run: |
+          tag_name=$(echo ${{ github.ref }} | cut -d / -f 3)
+          npm install -g generate-release-note
+          npx generate-release-note > ./release_note
+          release_body=$(sed -z 's/\n/\\n/g' ./release_note)
+          echo "{ \"tag_name\": \"$tag_name\", \"body\": \"$release_body\" }" > ./request_body
+          curl \
+          $GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases \
+          -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -d @request_body
+
+  npm-publish:
+    needs: git-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install npm packages
+        run: npm ci
+
+      - name: Check npm package vulnerabilities
+        run: npm audit
+
+      - name: Check lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish to npm registry
+        run: npm publish --access public
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
