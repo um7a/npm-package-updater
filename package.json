@@ -1,0 +1,47 @@
+{
+  "name": "npm-package-updater",
+  "version": "0.0.1",
+  "description": "npm package updater.",
+  "main": "dist/index.js",
+  "bin": {
+    "npm-package-updater": "bin/npm-package-updater"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --config eslintrc.js --ext .js,.ts",
+    "lintfix": "eslint . --config eslintrc.js --ext .js,.ts --fix",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/um7a/npm-package-updater.git"
+  },
+  "bugs": {
+    "url": "https://github.com/um7a/npm-package-updater/issues"
+  },
+  "homepage": "https://github.com/um7a/npm-package-updater#readme",
+  "author": "um7a",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "npm",
+    "update",
+    "ci",
+    "utility"
+  ],
+  "devDependencies": {
+    "@types/jest": "^29.0.3",
+    "@types/node": "^18.7.18",
+    "@types/semver": "^7.3.12",
+    "@typescript-eslint/eslint-plugin": "^5.37.0",
+    "@typescript-eslint/parser": "^5.37.0",
+    "eslint": "^8.23.1",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "jest": "^29.0.3",
+    "ts-jest": "^29.0.1",
+    "typescript": "^4.8.3"
+  },
+  "dependencies": {
+    "semver": "^7.3.7"
+  }
+}
