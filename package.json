@@ -29,7 +29,7 @@
     "utility"
   ],
   "devDependencies": {
-    "@types/jest": "^29.1.0",
+    "@types/jest": "^29.1.1",
     "@types/node": "^18.7.23",
     "@types/semver": "^7.3.12",
     "@typescript-eslint/eslint-plugin": "^5.38.1",
