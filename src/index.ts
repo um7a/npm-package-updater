@@ -5,35 +5,16 @@ import { NpmPackageUpdater, NpmPackageUpdaterParam } from './npmPackageUpdater';
 export default function main() {
   const argRules: ruleType[] = [
     {
-      shortKey: 'd',
-      longKey: 'debug',
-      type: 'boolean',
-      description: 'Enable debug logging.',
-    },
-    {
-      shortKey: 'r',
-      longKey: 'dryrun',
-      type: 'boolean',
-      description: "Do only check. Don't modify package.json.",
-    },
-    {
-      shortKey: 'h',
-      longKey: 'help',
-      type: 'boolean',
-      description: 'Show help message.',
-    },
-    {
       shortKey: 'c',
       longKey: 'caret',
       type: 'boolean',
       description: "Add '^' when update package versions.",
     },
     {
-      shortKey: 't',
-      longKey: 'tilde',
+      shortKey: 'd',
+      longKey: 'debug',
       type: 'boolean',
-      description:
-        "Add '~' when update package versions. Note that this option has priority over --caret.",
+      description: 'Enable debug logging.',
     },
     {
       shortKey: 'g',
@@ -42,10 +23,36 @@ export default function main() {
       description: 'Execute git commit on package.json change.',
     },
     {
+      shortKey: 'h',
+      longKey: 'help',
+      type: 'boolean',
+      description: 'Show help message.',
+    },
+    {
+      shortKey: 'o',
+      longKey: 'conservative',
+      type: 'boolean',
+      description:
+        'Update package versions only if current version range does not contain the new version.',
+    },
+    {
       shortKey: 'p',
       longKey: 'commit-prefix',
       type: 'string',
       description: 'Add prefix to git commit message.',
+    },
+    {
+      shortKey: 'r',
+      longKey: 'dryrun',
+      type: 'boolean',
+      description: "Do only check. Don't modify package.json.",
+    },
+    {
+      shortKey: 't',
+      longKey: 'tilde',
+      type: 'boolean',
+      description:
+        "Add '~' when update package versions. Note that this option has priority over --caret.",
     },
   ];
 
@@ -64,6 +71,7 @@ export default function main() {
     setTilde: false,
     useGit: false,
     commitPrefix: '',
+    conservative: false,
   };
 
   const debugOption = args.getBoolean('debug');
@@ -94,6 +102,11 @@ export default function main() {
   const commitPrefixOption = args.getString('commit-prefix');
   if (commitPrefixOption.found) {
     [npmPackageUpdaterParam.commitPrefix] = commitPrefixOption.values;
+  }
+
+  const conservativeOption = args.getBoolean('conservative');
+  if (conservativeOption.found && conservativeOption.values[0] === true) {
+    npmPackageUpdaterParam.conservative = true;
   }
 
   const npmPackageUpdater = new NpmPackageUpdater(npmPackageUpdaterParam);

@@ -23,6 +23,7 @@ export type NpmPackageUpdaterParam = {
   setTilde: boolean;
   useGit: boolean;
   commitPrefix: string;
+  conservative: boolean;
 };
 
 export class NpmPackageUpdater {
@@ -37,6 +38,8 @@ export class NpmPackageUpdater {
   private useGit: boolean;
 
   private commitPrefix: string;
+
+  private conservative: boolean;
 
   private packageJsonAccessor: PackageJsonAccessor;
 
@@ -608,6 +611,7 @@ export class NpmPackageUpdater {
     this.setTilde = param.setTilde;
     this.useGit = param.useGit;
     this.commitPrefix = param.commitPrefix;
+    this.conservative = param.conservative;
 
     NpmPackageUpdater.ensurePackageJsonExists();
     this.packageJsonAccessor = new PackageJsonAccessor('./package.json');
@@ -639,17 +643,51 @@ export class NpmPackageUpdater {
 
     this.logger.debug('Handle setCaret and setTilde options.');
     depPkgs.forEach((pkgInfo) => {
+      if (pkgInfo.current === pkgInfo.updateCandidate) {
+        // eslint-disable-next-line no-param-reassign
+        pkgInfo.updateVersion = pkgInfo.current;
+        return;
+      }
       if (this.setTilde) {
-        // eslint-disable-next-line no-param-reassign
-        pkgInfo.updateVersion = `~${pkgInfo.updateCandidate}`;
+        if (!pkgInfo.updateCandidate?.startsWith('~')) {
+          // eslint-disable-next-line no-param-reassign
+          pkgInfo.updateVersion = `~${pkgInfo.updateCandidate}`;
+        }
       } else if (this.setCaret) {
-        // eslint-disable-next-line no-param-reassign
-        pkgInfo.updateVersion = `^${pkgInfo.updateCandidate}`;
+        if (!pkgInfo.updateCandidate?.startsWith('^')) {
+          // eslint-disable-next-line no-param-reassign
+          pkgInfo.updateVersion = `^${pkgInfo.updateCandidate}`;
+        }
       } else {
         // eslint-disable-next-line no-param-reassign
         pkgInfo.updateVersion = pkgInfo.updateCandidate;
       }
     });
+
+    if (this.conservative) {
+      this.logger.debug('Handle conservative option.');
+      depPkgs.forEach((pkgInfo, pkgName) => {
+        if (
+          pkgInfo.updateVersion
+          && pkgInfo.updateVersion === pkgInfo.current
+        ) {
+          return;
+        }
+
+        if (
+          pkgInfo.updateCandidate
+          && semver.satisfies(pkgInfo.updateCandidate, pkgInfo.current)
+        ) {
+          this.logger.info(
+            `Current version of ${pkgName} ${pkgInfo.current} contains update version ${pkgInfo.updateCandidate}. Skip updating.`,
+          );
+          // eslint-disable-next-line no-param-reassign
+          pkgInfo.updateVersion = pkgInfo.current;
+        }
+      });
+      this.logger.debug('Handle conservative option successfully.');
+    }
+
     this.logger.debug('Handled setCaret and setTilde options successfully.');
 
     this.logger.debug('Check if the packages to be updated exist.');
