@@ -17,17 +17,18 @@ $ npm install -g npm-package-updater
 $ npm-package-updater -h
 
 Usage:
-  -d, --debug         : Enable debug logging.
-  -r, --dryrun        : Do only check. Don't modify package.json.
-  -h, --help          : Show help message.
   -c, --caret         : Add '^' when update package versions.
-  -t, --tilde         : Add '~' when update package versions. Note that this option has priority over --caret.
+  -d, --debug         : Enable debug logging.
   -g, --git           : Execute git commit on package.json change.
+  -h, --help          : Show help message.
+  -o, --conservative  : Update package versions only if current version range does not contain the new version.
   -p, --commit-prefix : Add prefix to git commit message.
+  -r, --dryrun        : Do only check. Don't modify package.json.
+  -t, --tilde         : Add '~' when update package versions. Note that this option has priority over --caret.
 ```
 
 ### Example
 
 ```
-$ npm-package-updater --caret --git --commit-prefix 'deps: '
+$ npm-package-updater --caret --git --commit-prefix 'deps: ' --conservative
 ```
