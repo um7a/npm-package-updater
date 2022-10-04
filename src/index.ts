@@ -1,6 +1,6 @@
 import { Arguments, ruleType } from './arguments';
 import Logger from './logger';
-import { NpmPackageUpdater, NpmPackageUpdaterParam } from './npmAutoUpdater';
+import { NpmPackageUpdater, NpmPackageUpdaterParam } from './npmPackageUpdater';
 
 export default function main() {
   const argRules: ruleType[] = [
@@ -57,7 +57,7 @@ export default function main() {
     return;
   }
 
-  const npmAutoUpdaterParam: NpmPackageUpdaterParam = {
+  const npmPackageUpdaterParam: NpmPackageUpdaterParam = {
     dryrun: false,
     logger: new Logger('info', true),
     setCaret: false,
@@ -68,35 +68,35 @@ export default function main() {
 
   const debugOption = args.getBoolean('debug');
   if (debugOption.found && debugOption.values[0] === true) {
-    npmAutoUpdaterParam.logger = new Logger('debug', true);
+    npmPackageUpdaterParam.logger = new Logger('debug', true);
   }
 
   const dryrunOption = args.getBoolean('dryrun');
   if (dryrunOption.found && dryrunOption.values[0] === true) {
-    npmAutoUpdaterParam.dryrun = true;
+    npmPackageUpdaterParam.dryrun = true;
   }
 
   const caretOption = args.getBoolean('caret');
   if (caretOption.found && caretOption.values[0] === true) {
-    npmAutoUpdaterParam.setCaret = true;
+    npmPackageUpdaterParam.setCaret = true;
   }
 
   const tildeOption = args.getBoolean('tilde');
   if (tildeOption.found && tildeOption.values[0] === true) {
-    npmAutoUpdaterParam.setTilde = true;
+    npmPackageUpdaterParam.setTilde = true;
   }
 
   const useGitOption = args.getBoolean('git');
   if (useGitOption.found && useGitOption.values[0] === true) {
-    npmAutoUpdaterParam.useGit = true;
+    npmPackageUpdaterParam.useGit = true;
   }
 
   const commitPrefixOption = args.getString('commit-prefix');
   if (commitPrefixOption.found) {
-    [npmAutoUpdaterParam.commitPrefix] = commitPrefixOption.values;
+    [npmPackageUpdaterParam.commitPrefix] = commitPrefixOption.values;
   }
 
-  const npmAutoUpdater = new NpmPackageUpdater(npmAutoUpdaterParam);
-  npmAutoUpdater.update('dependencies');
-  npmAutoUpdater.update('devDependencies');
+  const npmPackageUpdater = new NpmPackageUpdater(npmPackageUpdaterParam);
+  npmPackageUpdater.update('dependencies');
+  npmPackageUpdater.update('devDependencies');
 }
