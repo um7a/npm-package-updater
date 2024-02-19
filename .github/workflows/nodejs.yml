@@ -13,12 +13,12 @@ jobs:
     strategy:
       matrix:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-        node-version: [16.x, 14.x]
+        node-version: [20.x]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
@@ -39,10 +39,12 @@ jobs:
         run: npm run build
 
       - name: Configure git
-        run: git config --global user.name "github actions"
+        run: |
+          git config --global user.name "github actions"
+          git config --global user.email "um7a@users.noreply.github.com"
 
       - name: Commit and push package-lock.json if needed
-        if: ${{ matrix.node-version == '16.x' && github.event_name == 'push' }}
+        if: ${{ matrix.node-version == '20.x' && github.event_name == 'push' }}
         run: |
           if [[ ! -z $(git diff --shortstat package-lock.json) ]]; then
             git add package-lock.json
